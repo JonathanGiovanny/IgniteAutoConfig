@@ -1,0 +1,5 @@
+# Exclude IDE files
+.settings
+.project
+/target
+.classpath
