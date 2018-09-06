@@ -13,6 +13,9 @@ import org.apache.ignite.configuration.CacheConfiguration;
 
 public class IgniteAutoConfig {
 
+	/** Map Key: cacheName, Value: Tables with that cache */
+//	private static Map<String, List<TableDTO>> tables;
+
 	private static JdbcType[] jdbcTypes;
 	private static Collection<QueryEntity> entities;
 	private static List<String> cacheNames;
@@ -20,24 +23,33 @@ public class IgniteAutoConfig {
 	private static List<Class<?>> classes;
 	private static boolean isHibernate;
 
-	private static Factory<DataSource> dataSource;
 	private static final String CLASSNAME = "[IgniteAutoConfig]";
 
-	public static void setDataSource(Factory<DataSource> dataSource) {
-		IgniteAutoConfig.dataSource = dataSource;
-	}
+	// ---------------------------- Methods to generate the JDBCType and the Query Entities -------------------------//
+	
+	
+	// ------------------------------------ Methods to generate the cacheConfiguration ------------------------------//
 
-	public static CacheConfiguration<?, ?>[] generateCacheConfigurations(Class<?> classToConfig) throws Exception {
+	
+	// --------------------------------------------- Configuration methods ------------------------------------------//
+	/**
+	 * Generates the cacheConfiguration instance for each class
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public static CacheConfiguration<?, ?>[] generateCacheConfigurations(Factory<DataSource> dataSource)
+			throws Exception {
 		if (dataSource == null) {
-			throw new Exception (CLASSNAME + " [generateCacheConfig] Datasource has not been specified yet");
+			throw new Exception(CLASSNAME + " [generateCacheConfig] Datasource has not been specified yet");
 		}
-		
+
 		int cachesNum = cacheNames.size();
-		CacheConfiguration<?, ?>[] cacheConfigs = new CacheConfiguration<?, ?>[cachesNum]; 
-		CacheConfigurationFactory cc = new CacheConfigurationFactory();
+		CacheConfiguration<?, ?>[] cacheConfigs = new CacheConfiguration<?, ?>[cachesNum];
+		CacheConfigurationFactory cc = new CacheConfigurationFactory(dataSource);
 
 		for (int i = 0; i < cachesNum; i++) {
-			cacheConfigs[i] = cc.generateCacheConfig(classToConfig, cacheNames.get(i), false, false, false);
+			cacheConfigs[i] = cc.generateCacheConfig(classes.get(i), cacheNames.get(i), false, false, false);
 		}
 
 		return cacheConfigs;
@@ -118,5 +130,13 @@ public class IgniteAutoConfig {
 		}
 
 		return entities;
+	}
+
+	/**
+	 * Get the list of cacheNames mapped
+	 * @return
+	 */
+	public static List<String> getCacheNames() {
+		return cacheNames;
 	}
 }

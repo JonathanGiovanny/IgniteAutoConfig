@@ -19,46 +19,29 @@ import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
 import com.ignite.utilities.annotations.IgniteColumn;
 import com.ignite.utilities.annotations.IgniteId;
 import com.ignite.utilities.annotations.IgniteTable;
+import com.ignite.utilities.dto.TableDTO;
 
 public class ProcessAnnotations {
+
+	private TableDTO tableData;
 
 	private JdbcType jdbcType;
 	private QueryEntity entity;
 
 	private boolean isIdDeclared;
 	private boolean isColumnDeclared;
-	
+
 	private String cacheName;
 
 	private static final String CLASSNAME = "[ProcessNotations]";
 
-	public String getCacheName() {
-		return cacheName;
-	}
-	
 	/**
-	 * Get the created JDBCType data based on the notations
-	 * @return
-	 */
-	public JdbcType getJDBCType() {
-		return jdbcType;
-	}
-
-	/**
-	 * Get the created query entity based on the notations
-	 * @return
-	 */
-	public QueryEntity getQueryEntity() {
-		return entity;
-	}
-	
-	/**
-	 * Creates the jdbcType and entity objects for Apache Ignite configuration
-	 * based on the @IgniteTable, @IgniteId and @IgniteColumn notations
+	 * Creates the jdbcType and entity objects for Apache Ignite configuration based on the @IgniteTable, @IgniteId and @IgniteColumn notations
+	 * 
 	 * @param valueClass
-	 * 					Class with the notations
+	 *            Class with the notations
 	 * @throws Exception
-	 * 					Message for possible notation errors or JdbcType or QueryEntity errors
+	 *             Message for possible notation errors or JdbcType or QueryEntity errors
 	 */
 	public void loadData(Class<?> valueClass) throws Exception {
 		// Process @IgniteTable
@@ -68,7 +51,7 @@ public class ProcessAnnotations {
 
 			cacheName = igniteTable.cacheName();
 			// If Name not declared then use the class name
-			String tableName = "".equals(igniteTable.name()) ? valueClass.getSimpleName() : igniteTable.name();
+			String tableName = "".equals(igniteTable.name()) ? valueClass.getSimpleName().toUpperCase() : igniteTable.name().toUpperCase();
 
 			// JDBC Type to connect to the DB table
 			jdbcType = new JdbcType();
@@ -105,6 +88,7 @@ public class ProcessAnnotations {
 
 	/**
 	 * Create the ignite objects related to the table and columns mapping defined by the notations
+	 * 
 	 * @param fields
 	 * @param jdbcKeys
 	 * @param jdbcValues
@@ -112,8 +96,8 @@ public class ProcessAnnotations {
 	 * @param entityFields
 	 * @throws Exception
 	 */
-	private void createTableSchema(Field[] fields, List<JdbcTypeField> jdbcKeys, List<JdbcTypeField> jdbcValues,
-			Set<String> entityKeys, LinkedHashMap<String, String> entityFields) throws Exception {
+	private void createTableSchema(Field[] fields, List<JdbcTypeField> jdbcKeys, List<JdbcTypeField> jdbcValues, Set<String> entityKeys,
+			LinkedHashMap<String, String> entityFields) throws Exception {
 		// Process Fields
 		for (Field field : fields) {
 			boolean isKey = false;
@@ -162,8 +146,8 @@ public class ProcessAnnotations {
 	}
 
 	/**
-	 * Get the SQL type for the main table types
-	 * * Default Type is varchar
+	 * Get the SQL type for the main table types * Default Type is varchar
+	 * 
 	 * @param type
 	 * @return
 	 */
@@ -180,5 +164,39 @@ public class ProcessAnnotations {
 			return Types.TIMESTAMP;
 		}
 		return Types.VARCHAR;
+	}
+
+	/**
+	 * Get the cacheName declared on the table
+	 * @return
+	 */
+	public String getCacheName() {
+		return cacheName;
+	}
+
+	/**
+	 * Get the created JDBCType data based on the notations
+	 * 
+	 * @return
+	 */
+	public JdbcType getJDBCType() {
+		return jdbcType;
+	}
+
+	/**
+	 * Get the created query entity based on the notations
+	 * 
+	 * @return
+	 */
+	public QueryEntity getQueryEntity() {
+		return entity;
+	}
+
+	/**
+	 * Get the table data object based on TableDTO
+	 * @return
+	 */
+	public TableDTO getTableData() {
+		return tableData;
 	}
 }
