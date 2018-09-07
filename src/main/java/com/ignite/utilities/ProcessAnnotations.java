@@ -19,6 +19,7 @@ import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
 import com.ignite.utilities.annotations.IgniteColumn;
 import com.ignite.utilities.annotations.IgniteId;
 import com.ignite.utilities.annotations.IgniteTable;
+import com.ignite.utilities.dto.ColumnDTO;
 import com.ignite.utilities.dto.TableDTO;
 
 public class ProcessAnnotations {
@@ -52,6 +53,12 @@ public class ProcessAnnotations {
 			cacheName = igniteTable.cacheName();
 			// If Name not declared then use the class name
 			String tableName = "".equals(igniteTable.name()) ? valueClass.getSimpleName().toUpperCase() : igniteTable.name().toUpperCase();
+
+			// Load table Data into DTO
+			tableData = new TableDTO();
+			tableData.setCacheName(cacheName);
+			tableData.setTableName(tableName);
+			tableData.setTableType(valueClass);
 
 			// JDBC Type to connect to the DB table
 			jdbcType = new JdbcType();
@@ -98,6 +105,9 @@ public class ProcessAnnotations {
 	 */
 	private void createTableSchema(Field[] fields, List<JdbcTypeField> jdbcKeys, List<JdbcTypeField> jdbcValues, Set<String> entityKeys,
 			LinkedHashMap<String, String> entityFields) throws Exception {
+		// Load column Data into DTO
+		List<ColumnDTO> columns = new ArrayList<>();
+
 		// Process Fields
 		for (Field field : fields) {
 			boolean isKey = false;
@@ -110,6 +120,8 @@ public class ProcessAnnotations {
 
 			// If field is annotated with @IgniteColumn
 			if (field.isAnnotationPresent(IgniteColumn.class)) {
+				ColumnDTO columnData = new ColumnDTO();
+
 				Annotation annotationField = field.getAnnotation(IgniteColumn.class);
 				IgniteColumn igniteField = (IgniteColumn) annotationField;
 
@@ -120,8 +132,14 @@ public class ProcessAnnotations {
 				// If Name not declared then use the field name
 				String columnName = "".equals(igniteField.name()) ? name : igniteField.name();
 
+				columnData.setColumnName(columnName);
+				columnData.setFieldName(name);
+				columnData.setFieldType(type);
+				
 				// If is Id Key
 				if (isKey) {
+					columnData.setKey(true);
+
 					jdbcType.setKeyType(type);
 					jdbcKeys.add(new JdbcTypeField(getSQLType(field.getType()), columnName, type, name));
 
@@ -137,12 +155,17 @@ public class ProcessAnnotations {
 
 				// QueryEntity requires to map the id as well
 				entityFields.put(name, type.getName());
+
+				columns.add(columnData);
 			}
 
 			if (isKey && !isColumnDeclared) {
 				throw new Exception(CLASSNAME + "[createTableSchema] @IgniteId should have also @IgniteColumn");
 			}
 		}
+		
+		// Fill columns info for tableData
+		tableData.setColumns(columns);
 	}
 
 	/**
@@ -168,6 +191,7 @@ public class ProcessAnnotations {
 
 	/**
 	 * Get the cacheName declared on the table
+	 * 
 	 * @return
 	 */
 	public String getCacheName() {
@@ -194,6 +218,7 @@ public class ProcessAnnotations {
 
 	/**
 	 * Get the table data object based on TableDTO
+	 * 
 	 * @return
 	 */
 	public TableDTO getTableData() {

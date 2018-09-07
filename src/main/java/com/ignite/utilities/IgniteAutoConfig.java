@@ -11,26 +11,27 @@ import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.store.jdbc.JdbcType;
 import org.apache.ignite.configuration.CacheConfiguration;
 
+import com.ignite.utilities.dto.TableDTO;
+
 public class IgniteAutoConfig {
 
 	/** Map Key: cacheName, Value: Tables with that cache */
-//	private static Map<String, List<TableDTO>> tables;
+	// private static Map<String, List<TableDTO>> tables;
 
 	private static JdbcType[] jdbcTypes;
 	private static Collection<QueryEntity> entities;
 	private static List<String> cacheNames;
 
 	private static List<Class<?>> classes;
+	private static List<TableDTO> tables = new ArrayList<>();
 	private static boolean isHibernate;
 
 	private static final String CLASSNAME = "[IgniteAutoConfig]";
 
 	// ---------------------------- Methods to generate the JDBCType and the Query Entities -------------------------//
-	
-	
+
 	// ------------------------------------ Methods to generate the cacheConfiguration ------------------------------//
 
-	
 	// --------------------------------------------- Configuration methods ------------------------------------------//
 	/**
 	 * Generates the cacheConfiguration instance for each class
@@ -38,8 +39,7 @@ public class IgniteAutoConfig {
 	 * @return
 	 * @throws Exception
 	 */
-	public static CacheConfiguration<?, ?>[] generateCacheConfigurations(Factory<DataSource> dataSource)
-			throws Exception {
+	public static CacheConfiguration<?, ?>[] generateCacheConfigurations(Factory<DataSource> dataSource) throws Exception {
 		if (dataSource == null) {
 			throw new Exception(CLASSNAME + " [generateCacheConfig] Datasource has not been specified yet");
 		}
@@ -56,8 +56,7 @@ public class IgniteAutoConfig {
 	}
 
 	/**
-	 * Change the lookup for the notations from these lib to the javax.persistence
-	 * ones.
+	 * Change the lookup for the notations from these lib to the javax.persistence ones.
 	 * 
 	 * @param isHibernate
 	 */
@@ -75,6 +74,9 @@ public class IgniteAutoConfig {
 		if (classes == null) {
 			classes = new ArrayList<>();
 		}
+
+		ProcessAnnotationsDTO pa = new ProcessAnnotationsDTO();
+		tables.add(pa.loadClassData(classToAdd));
 
 		classes.add(classToAdd);
 	}
@@ -103,8 +105,7 @@ public class IgniteAutoConfig {
 	}
 
 	/**
-	 * Get the created JDBCType data based on the notations <strong>* It shoud have
-	 * classes added and those cannot be added later</strong>
+	 * Get the created JDBCType data based on the notations <strong>* It shoud have classes added and those cannot be added later</strong>
 	 * 
 	 * @return
 	 * @throws Exception
@@ -118,8 +119,7 @@ public class IgniteAutoConfig {
 	}
 
 	/**
-	 * Get the created query entity based on the notations <strong>* It shoud have
-	 * classes added and those cannot be added later</strong>
+	 * Get the created query entity based on the notations <strong>* It shoud have classes added and those cannot be added later</strong>
 	 * 
 	 * @return
 	 * @throws Exception
@@ -134,6 +134,7 @@ public class IgniteAutoConfig {
 
 	/**
 	 * Get the list of cacheNames mapped
+	 * 
 	 * @return
 	 */
 	public static List<String> getCacheNames() {
