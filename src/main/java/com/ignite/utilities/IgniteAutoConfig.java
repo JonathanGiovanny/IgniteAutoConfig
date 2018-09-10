@@ -2,67 +2,45 @@ package com.ignite.utilities;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import javax.cache.configuration.Factory;
 import javax.sql.DataSource;
 
 import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.store.jdbc.JdbcType;
+import org.apache.ignite.cache.store.jdbc.dialect.JdbcDialect;
 import org.apache.ignite.configuration.CacheConfiguration;
 
 import com.ignite.utilities.dto.TableDTO;
 
+/**
+ * Class used to generate the Apache Ignite configuration set.<br>
+ * <br>
+ * * The porpuse of this project is to simplify the configuration of the Ignite lib through a few calls and using annotations as
+ * <strong>@IgniteTable</strong>, <strong>@IgniteId</strong> and/or <strong>@IgniteColumn</strong> the last two are optional only if the mapped table
+ * is using the javax.persistence lib which should add <strong>@Id</strong> and <strong>@Column</strong>.
+ * 
+ * @author jcamargos
+ * @date 10/09/2018
+ */
 public class IgniteAutoConfig {
-
-	/** Map Key: cacheName, Value: Tables with that cache */
-	// private static Map<String, List<TableDTO>> tables;
 
 	private static JdbcType[] jdbcTypes;
 	private static Collection<QueryEntity> entities;
+
+	/** Map Key: cacheName, Value: Tables with that cache */
+	private static Map<String, List<TableDTO>> cacheTables = new HashMap<>();
+
+	/** List of the caches created */
 	private static List<String> cacheNames;
 
+	/** List of the original classes used to map the schema */
 	private static List<Class<?>> classes;
-	private static List<TableDTO> tables = new ArrayList<>();
-	private static boolean isHibernate;
 
+	@SuppressWarnings("unused")
 	private static final String CLASSNAME = "[IgniteAutoConfig]";
-
-	// ---------------------------- Methods to generate the JDBCType and the Query Entities -------------------------//
-
-	// ------------------------------------ Methods to generate the cacheConfiguration ------------------------------//
-
-	// --------------------------------------------- Configuration methods ------------------------------------------//
-	/**
-	 * Generates the cacheConfiguration instance for each class
-	 * 
-	 * @return
-	 * @throws Exception
-	 */
-	public static CacheConfiguration<?, ?>[] generateCacheConfigurations(Factory<DataSource> dataSource) throws Exception {
-		if (dataSource == null) {
-			throw new Exception(CLASSNAME + " [generateCacheConfig] Datasource has not been specified yet");
-		}
-
-		int cachesNum = cacheNames.size();
-		CacheConfiguration<?, ?>[] cacheConfigs = new CacheConfiguration<?, ?>[cachesNum];
-		CacheConfigurationFactory cc = new CacheConfigurationFactory(dataSource);
-
-		for (int i = 0; i < cachesNum; i++) {
-			cacheConfigs[i] = cc.generateCacheConfig(classes.get(i), cacheNames.get(i), false, false, false);
-		}
-
-		return cacheConfigs;
-	}
-
-	/**
-	 * Change the lookup for the notations from these lib to the javax.persistence ones.
-	 * 
-	 * @param isHibernate
-	 */
-	public static void setIsHibernate(boolean isHibernate) {
-		IgniteAutoConfig.isHibernate = isHibernate;
-	}
 
 	/**
 	 * Add classes to be processed by
@@ -75,9 +53,21 @@ public class IgniteAutoConfig {
 			classes = new ArrayList<>();
 		}
 
+		// Generates the TableDTO with the info of the class added to be mapped
 		ProcessAnnotationsDTO pa = new ProcessAnnotationsDTO();
-		tables.add(pa.loadClassData(classToAdd));
+		TableDTO tableMapped = pa.loadClassData(classToAdd);
 
+		List<TableDTO> tablesIgnite = null;
+		// Verify if the cache name used already exists to add the class to the cache being used to that
+		if (cacheTables.get(tableMapped.getCacheName()) == null) {
+			tablesIgnite = new ArrayList<>();
+		} else {
+			tablesIgnite = cacheTables.get(tableMapped.getCacheName());
+		}
+
+		tablesIgnite.add(tableMapped);
+		cacheTables.put(tableMapped.getCacheName(), tablesIgnite);
+		cacheNames.add(tableMapped.getCacheName());
 		classes.add(classToAdd);
 	}
 
@@ -91,9 +81,6 @@ public class IgniteAutoConfig {
 		entities = new ArrayList<>();
 		cacheNames = new ArrayList<>();
 
-		if (isHibernate) {
-		}
-
 		for (int i = 0; i < jdbcTypes.length; i++) {
 			Class<?> igniteClass = classes.get(i);
 			ProcessAnnotations pa = new ProcessAnnotations();
@@ -105,7 +92,8 @@ public class IgniteAutoConfig {
 	}
 
 	/**
-	 * Get the created JDBCType data based on the notations <strong>* It shoud have classes added and those cannot be added later</strong>
+	 * Get the created JDBCType data based on the notations <br>
+	 * <strong>* It shoud have classes added and those cannot be added later</strong>
 	 * 
 	 * @return
 	 * @throws Exception
@@ -119,7 +107,8 @@ public class IgniteAutoConfig {
 	}
 
 	/**
-	 * Get the created query entity based on the notations <strong>* It shoud have classes added and those cannot be added later</strong>
+	 * Get the created query entity based on the notations <br>
+	 * <strong>* It shoud have classes added and those cannot be added later</strong>
 	 * 
 	 * @return
 	 * @throws Exception
@@ -139,5 +128,16 @@ public class IgniteAutoConfig {
 	 */
 	public static List<String> getCacheNames() {
 		return cacheNames;
+	}
+
+	/**
+	 * Generate the array with the cache Configuration objects for each cache name mapped on each table
+	 * 
+	 * @param dataSource
+	 * @param dialect
+	 * @return
+	 */
+	public static CacheConfiguration<?, ?>[] generateCacheConfiguration(Factory<DataSource> dataSource, JdbcDialect dialect) {
+		return null;
 	}
 }
