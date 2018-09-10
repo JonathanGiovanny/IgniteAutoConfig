@@ -87,15 +87,25 @@ public class ProcessAnnotationsDTO {
 			if (field.isAnnotationPresent(IgniteColumn.class) || field.isAnnotationPresent(Column.class)) {
 				ColumnDTO columnData = new ColumnDTO();
 
+				Class<?> type = field.getType();
+				String name = field.getName();
+				
+				String columnName = null;
+
 				Annotation annotationField = field.getAnnotation(IgniteColumn.class);
-				IgniteColumn igniteField = (IgniteColumn) annotationField;
+				if (annotationField == null) {
+					annotationField = field.getAnnotation(Column.class);
+					Column igniteField = (Column) annotationField;
+					// If Name not declared then use the field name
+					columnName = igniteField == null || "".equals(igniteField.name()) ? name : igniteField.name();
+
+				} else {
+					IgniteColumn igniteField = (IgniteColumn) annotationField;
+					columnName = igniteField == null || "".equals(igniteField.name()) ? name : igniteField.name();
+				}
 
 				isColumnDeclared = true;
 
-				Class<?> type = field.getType();
-				String name = field.getName();
-				// If Name not declared then use the field name
-				String columnName = "".equals(igniteField.name()) ? name : igniteField.name();
 
 				columnData.setColumnName(columnName);
 				columnData.setFieldName(name);

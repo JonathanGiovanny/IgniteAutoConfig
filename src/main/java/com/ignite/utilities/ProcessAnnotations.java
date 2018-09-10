@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.persistence.Column;
+import javax.persistence.Id;
+
 import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.store.jdbc.JdbcType;
 import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
@@ -113,24 +116,33 @@ public class ProcessAnnotations {
 			boolean isKey = false;
 
 			// If field is annotated with @IgniteId
-			if (field.isAnnotationPresent(IgniteId.class)) {
+			if (field.isAnnotationPresent(IgniteId.class) || field.isAnnotationPresent(Id.class)) {
 				isIdDeclared = true;
 				isKey = true;
 			}
 
 			// If field is annotated with @IgniteColumn
-			if (field.isAnnotationPresent(IgniteColumn.class)) {
+			if (field.isAnnotationPresent(IgniteColumn.class) || field.isAnnotationPresent(Column.class)) {
 				ColumnDTO columnData = new ColumnDTO();
-
-				Annotation annotationField = field.getAnnotation(IgniteColumn.class);
-				IgniteColumn igniteField = (IgniteColumn) annotationField;
-
-				isColumnDeclared = true;
 
 				Class<?> type = field.getType();
 				String name = field.getName();
-				// If Name not declared then use the field name
-				String columnName = "".equals(igniteField.name()) ? name : igniteField.name();
+				
+				String columnName = null;
+
+				Annotation annotationField = field.getAnnotation(IgniteColumn.class);
+				if (annotationField == null) {
+					annotationField = field.getAnnotation(Column.class);
+					Column igniteField = (Column) annotationField;
+					// If Name not declared then use the field name
+					columnName = igniteField == null || "".equals(igniteField.name()) ? name : igniteField.name();
+
+				} else {
+					IgniteColumn igniteField = (IgniteColumn) annotationField;
+					columnName = igniteField == null || "".equals(igniteField.name()) ? name : igniteField.name();
+				}
+
+				isColumnDeclared = true;
 
 				columnData.setColumnName(columnName);
 				columnData.setFieldName(name);
