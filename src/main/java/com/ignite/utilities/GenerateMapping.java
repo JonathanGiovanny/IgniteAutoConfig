@@ -1,37 +1,54 @@
 package com.ignite.utilities;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
-
-import javax.persistence.Column;
-import javax.persistence.Id;
+import java.util.TreeSet;
 
 import org.apache.ignite.cache.QueryEntity;
 import org.apache.ignite.cache.store.jdbc.JdbcType;
 import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
 
-import com.ignite.utilities.annotations.IgniteColumn;
-import com.ignite.utilities.annotations.IgniteId;
 import com.ignite.utilities.dto.ColumnDTO;
 import com.ignite.utilities.dto.TableDTO;
 
 public class GenerateMapping {
 
-	private JdbcType[] jdbcTypes;
-	private Collection<QueryEntity> entities;
+	private JdbcType jdbcType;
+	private QueryEntity queryEntity;
 
 	public void createTableSchema(String cacheName, TableDTO tableData) throws Exception {
+		jdbcType = new JdbcType();
+		queryEntity = new QueryEntity();
+		queryEntity.setValueType(tableData.getTableType().getCanonicalName());
+
+		// JDBC Type to connect to the DB table
+		jdbcType = new JdbcType();
+		jdbcType.setCacheName(cacheName);
+		jdbcType.setValueType(tableData.getTableType());
+		jdbcType.setDatabaseTable(tableData.getTableName());
+
+		// Entity Type to create table on cache
+		queryEntity = new QueryEntity();
+		queryEntity.setValueType(tableData.getTableType().getCanonicalName());
+
 		// Load column Data into DTO
 		List<ColumnDTO> columns = tableData.getColumns();
+
+		// List of the keys for the table
+		Set<String> entityKeys = new TreeSet<>();
+		// List of the fields for that table
+		LinkedHashMap<String, String> entityFields = new LinkedHashMap<>();
+
+		// List of keys for the table
+		List<JdbcTypeField> jdbcKeys = new ArrayList<>();
+		// List of values for the table
+		List<JdbcTypeField> jdbcValues = new ArrayList<>();
 
 		// Process Fields
 		for (ColumnDTO column : columns) {
@@ -39,25 +56,30 @@ public class GenerateMapping {
 
 			// If is Id Key
 			if (isKey) {
-				jdbcType.setKeyType(type);
-				jdbcKeys.add(new JdbcTypeField(getSQLType(column.getType()), columnName, type, name));
+				jdbcType.setKeyType(column.getFieldType());
+				jdbcKeys.add(
+						new JdbcTypeField(getSQLType(column.getFieldType()), column.getColumnName(), column.getFieldType(), column.getFieldName()));
 
-				entity.setKeyType(type.getName());
-				entity.setKeyFieldName(name);
+				queryEntity.setKeyType(column.getFieldType().getName());
+				queryEntity.setKeyFieldName(column.getFieldName());
 
-				entityKeys.add(name);
+				entityKeys.add(column.getFieldName());
 
 			} else {
 				// Fields aside from the PK of the the table because ID it should be there
-				jdbcValues.add(new JdbcTypeField(getSQLType(column.getType()), columnName, type, name));
+				jdbcValues.add(
+						new JdbcTypeField(getSQLType(column.getFieldType()), column.getColumnName(), column.getFieldType(), column.getFieldName()));
 			}
 
 			// QueryEntity requires to map the id as well
-			entities.put(name, type.getName());
+			entityFields.put(column.getFieldName(), column.getFieldType().getName());
 		}
-		
-		// Fill columns info for tableData
-		tableData.setColumns(columns);
+
+		jdbcType.setKeyFields(jdbcKeys.toArray(new JdbcTypeField[jdbcKeys.size()]));
+		jdbcType.setValueFields(jdbcValues.toArray(new JdbcTypeField[jdbcKeys.size()]));
+
+		queryEntity.setKeyFields(entityKeys);
+		queryEntity.setFields(entityFields);
 	}
 
 	/**
@@ -81,11 +103,21 @@ public class GenerateMapping {
 		return Types.VARCHAR;
 	}
 
-	public JdbcType[] getJdbcTypes() {
-		return jdbcTypes;
+	/**
+	 * Get the JdbcTypes for the cacheConfiguration
+	 * 
+	 * @return
+	 */
+	public JdbcType getJdbcType() {
+		return jdbcType;
 	}
 
-	public Collection<QueryEntity> getEntities() {
-		return entities;
+	/**
+	 * Get the QueryEntities for the cacheConfiguration
+	 * 
+	 * @return
+	 */
+	public QueryEntity getQueryEntity() {
+		return queryEntity;
 	}
 }
