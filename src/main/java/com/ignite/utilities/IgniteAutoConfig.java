@@ -42,9 +42,6 @@ public class IgniteAutoConfig {
 	/** List of the original classes used to map the schema */
 	private static List<Class<?>> classes = new ArrayList<>();
 
-	@SuppressWarnings("unused")
-	private static final String CLASSNAME = "[IgniteAutoConfig]";
-
 	/**
 	 * Add classes to be processed by
 	 * 
@@ -71,26 +68,6 @@ public class IgniteAutoConfig {
 	}
 
 	/**
-	 * Fill the arrays with the data based on the classes added
-	 * 
-	 * @throws Exception
-	 */
-	private static void processNotations() throws Exception {
-		jdbcTypes = new JdbcType[classes.size()];
-		entities = new ArrayList<>();
-		cacheNames = new ArrayList<>();
-
-		for (int i = 0; i < jdbcTypes.length; i++) {
-			Class<?> igniteClass = classes.get(i);
-			ProcessAnnotations pa = new ProcessAnnotations();
-			pa.loadData(igniteClass);
-			jdbcTypes[i] = pa.getJDBCType();
-			entities.add(pa.getQueryEntity());
-			cacheNames.add(pa.getCacheName());
-		}
-	}
-
-	/**
 	 * Get the created JDBCType data based on the notations <br>
 	 * <strong>* It shoud have classes added and those cannot be added later</strong>
 	 * 
@@ -98,10 +75,6 @@ public class IgniteAutoConfig {
 	 * @throws Exception
 	 */
 	public static JdbcType[] getJDBCTypes() throws Exception {
-		if (jdbcTypes == null) {
-			processNotations();
-		}
-
 		return jdbcTypes;
 	}
 
@@ -113,10 +86,6 @@ public class IgniteAutoConfig {
 	 * @throws Exception
 	 */
 	public static Collection<QueryEntity> getQueryEntities() throws Exception {
-		if (entities == null) {
-			processNotations();
-		}
-
 		return entities;
 	}
 
@@ -142,10 +111,10 @@ public class IgniteAutoConfig {
 	 * 
 	 * @param dataSource
 	 * @param dialect
-	 * @return
+	 * @return Map < cacheName, CacheConfiguration>
 	 */
-	public static CacheConfiguration<?, ?>[] generateCacheConfiguration(Factory<DataSource> dataSource, JdbcDialect dialect) {
-		List<CacheConfiguration<?, ?>> cacheConfigs = new ArrayList<>();
+	public static Map<String, CacheConfiguration<?, ?>> generateCacheConfiguration(Factory<DataSource> dataSource, JdbcDialect dialect) {
+		Map<String, CacheConfiguration<?, ?>> cacheConfigs = new HashMap<>();
 
 		try {
 			for (String cacheName : cacheNames) {
@@ -183,13 +152,13 @@ public class IgniteAutoConfig {
 				cacheConfig.setQueryEntities(queryEntities);
 
 				// Add the cacheConfiguration created to a list
-				cacheConfigs.add(cacheConfig);
+				cacheConfigs.put(cacheName, cacheConfig);
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return cacheConfigs.toArray(new CacheConfiguration<?, ?>[cacheConfigs.size()]);
+		return cacheConfigs;
 	}
 }

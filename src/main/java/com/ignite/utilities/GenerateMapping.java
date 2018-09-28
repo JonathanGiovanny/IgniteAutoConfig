@@ -64,14 +64,13 @@ public class GenerateMapping {
 				queryEntity.setKeyFieldName(column.getFieldName());
 
 				entityKeys.add(column.getFieldName());
-
-			} else {
-				// Fields aside from the PK of the the table because ID it should be there
-				jdbcValues.add(
-						new JdbcTypeField(getSQLType(column.getFieldType()), column.getColumnName(), column.getFieldType(), column.getFieldName()));
 			}
 
-			// QueryEntity requires to map the id as well
+			// JdbcValues maps the object data
+			jdbcValues.add(
+					new JdbcTypeField(getSQLType(column.getFieldType()), column.getColumnName(), column.getFieldType(), column.getFieldName()));
+
+			// QueryEntity maps the table column data
 			entityFields.put(column.getFieldName(), column.getFieldType().getName());
 		}
 
