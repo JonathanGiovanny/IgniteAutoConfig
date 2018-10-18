@@ -21,7 +21,7 @@ import com.ignite.utilities.dto.TableDTO;
 /**
  * Class used to generate the Apache Ignite configuration set.<br>
  * <br>
- * * The porpuse of this project is to simplify the configuration of the Ignite lib through a few calls and using annotations as
+ * * The purpose of this project is to simplify the configuration of the Ignite lib through a few calls and using annotations as
  * <strong>@IgniteTable</strong>, <strong>@IgniteId</strong> and/or <strong>@IgniteColumn</strong> the last two are optional only if the mapped table
  * is using the javax.persistence lib which should add <strong>@Id</strong> and <strong>@Column</strong>.
  * 
@@ -65,37 +65,6 @@ public class IgniteAutoConfig {
 		cacheTables.put(tableMapped.getCacheName(), tablesIgnite);
 		cacheNames.add(tableMapped.getCacheName());
 		classes.add(classToAdd);
-	}
-
-	/**
-	 * Get the created JDBCType data based on the notations <br>
-	 * <strong>* It shoud have classes added and those cannot be added later</strong>
-	 * 
-	 * @return
-	 * @throws Exception
-	 */
-	public static JdbcType[] getJDBCTypes() throws Exception {
-		return jdbcTypes;
-	}
-
-	/**
-	 * Get the created query entity based on the notations <br>
-	 * <strong>* It shoud have classes added and those cannot be added later</strong>
-	 * 
-	 * @return
-	 * @throws Exception
-	 */
-	public static Collection<QueryEntity> getQueryEntities() throws Exception {
-		return entities;
-	}
-
-	/**
-	 * Get the list of cacheNames mapped
-	 * 
-	 * @return
-	 */
-	public static List<String> getCacheNames() {
-		return cacheNames;
 	}
 
 	/**
@@ -160,5 +129,36 @@ public class IgniteAutoConfig {
 		}
 
 		return cacheConfigs;
+	}
+
+	/**
+	 * Get the created JDBCType data based on the notations <br>
+	 * <strong>* It should have classes added and those cannot be added later</strong>
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public static JdbcType[] getJDBCTypes() throws Exception {
+		return jdbcTypes;
+	}
+
+	/**
+	 * Get the created query entity based on the notations <br>
+	 * <strong>* It should have classes added and those cannot be added later</strong>
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public static Collection<QueryEntity> getQueryEntities() throws Exception {
+		return entities;
+	}
+
+	/**
+	 * Get the list of cacheNames mapped
+	 * 
+	 * @return
+	 */
+	public static List<String> getCacheNames() {
+		return cacheNames;
 	}
 }
