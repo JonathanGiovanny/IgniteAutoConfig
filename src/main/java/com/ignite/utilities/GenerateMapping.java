@@ -1,5 +1,6 @@
 package com.ignite.utilities;
 
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -96,7 +97,7 @@ public class GenerateMapping {
 			return Types.DOUBLE;
 		} else if (type == String.class) {
 			return Types.VARCHAR;
-		} else if (type == LocalDate.class || type == LocalDateTime.class || type == LocalTime.class) {
+		} else if (type == LocalDate.class || type == LocalDateTime.class || type == LocalTime.class || type == Timestamp.class) {
 			return Types.TIMESTAMP;
 		}
 		return Types.VARCHAR;
