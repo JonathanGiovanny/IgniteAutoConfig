@@ -9,9 +9,7 @@ import java.util.Map;
 import javax.cache.configuration.Factory;
 import javax.sql.DataSource;
 
-import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.QueryEntity;
-import org.apache.ignite.cache.store.jdbc.CacheJdbcPojoStoreFactory;
 import org.apache.ignite.cache.store.jdbc.JdbcType;
 import org.apache.ignite.cache.store.jdbc.dialect.JdbcDialect;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -41,6 +39,9 @@ public class IgniteAutoConfig {
 
 	/** List of the original classes used to map the schema */
 	private static List<Class<?>> classes = new ArrayList<>();
+
+	/** Will define if the configuration is based on the CacheStore object */
+	private static boolean isCacheStore;
 
 	/**
 	 * Add classes to be processed by
@@ -83,52 +84,8 @@ public class IgniteAutoConfig {
 	 * @return Map < cacheName, CacheConfiguration>
 	 */
 	public static Map<String, CacheConfiguration<?, ?>> generateCacheConfiguration(Factory<DataSource> dataSource, JdbcDialect dialect) {
-		Map<String, CacheConfiguration<?, ?>> cacheConfigs = new HashMap<>();
-
-		try {
-			for (String cacheName : cacheNames) {
-				List<TableDTO> tablesPerCache = cacheTables.get(cacheName);
-
-				// Generate a cacheConfiguration per cacheName
-				CacheConfiguration<?, ?> cacheConfig = new CacheConfiguration<>();
-				cacheConfig.setReadThrough(true);
-				cacheConfig.setWriteThrough(true);
-				cacheConfig.setWriteBehindEnabled(true);
-				cacheConfig.setWriteBehindFlushFrequency(250);
-
-				cacheConfig.setName(cacheName);
-				cacheConfig.setAtomicityMode(CacheAtomicityMode.ATOMIC);
-				cacheConfig.setBackups(0);
-
-				Collection<QueryEntity> queryEntities = new ArrayList<>();
-
-				// One store factory per cacheConfig with the data of each Table
-				CacheJdbcPojoStoreFactory<Object, Object> storeFactory = new CacheJdbcPojoStoreFactory<>();
-				storeFactory.setDataSourceFactory(dataSource);
-				storeFactory.setDialect(dialect);
-
-				for (TableDTO tableData : tablesPerCache) {
-					// Generates the JdbcType data and QueryEntity for the table
-					GenerateMapping gm = new GenerateMapping();
-					gm.createTableSchema(tableData.getCacheName(), tableData);
-
-					storeFactory.setTypes(gm.getJdbcType());
-
-					queryEntities.add(gm.getQueryEntity());
-				}
-
-				cacheConfig.setCacheStoreFactory(storeFactory);
-				cacheConfig.setQueryEntities(queryEntities);
-
-				// Add the cacheConfiguration created to a list
-				cacheConfigs.put(cacheName, cacheConfig);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return cacheConfigs;
+		GenerateCacheConfiguration.init(isCacheStore, cacheTables, cacheNames);
+		return GenerateCacheConfiguration.generateCacheConfiguration(dataSource, dialect);
 	}
 
 	/**
@@ -160,5 +117,21 @@ public class IgniteAutoConfig {
 	 */
 	public static List<String> getCacheNames() {
 		return cacheNames;
+	}
+
+	/**
+	 * Set if a cacheStore will be generated per table
+	 * @return
+	 */
+	public static boolean isCacheStore() {
+		return isCacheStore;
+	}
+
+	/**
+	 * Get the value of the variable
+	 * @param isCacheStore
+	 */
+	public static void setCacheStore(boolean isCacheStore) {
+		IgniteAutoConfig.isCacheStore = isCacheStore;
 	}
 }
